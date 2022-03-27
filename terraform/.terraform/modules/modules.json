@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"kubernetes","Source":"registry.terraform.io/ptsgr/kubernetes/openstack","Version":"0.1.1","Dir":".terraform/modules/kubernetes"},{"Key":"","Source":"","Dir":"."}]}
