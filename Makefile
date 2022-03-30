@@ -55,10 +55,30 @@ pod:
 	@echo "\n🚀 Deploying test pod..."
 	kubectl apply -f dev/manifests/pods/lifespan-seven.pod.yaml
 
+.PHONY: request-pod
+request-pod:
+	@echo "\n🚀 Deploying request pod..."
+	kubectl apply -f dev/manifests/pods/requests-two.pod.yaml
+
+.PHONY: request-bad-pod
+request-bad-pod:
+	@echo "\n🚀 Deploying request pod..."
+	kubectl apply -f dev/manifests/pods/requests-four.pod.yaml
+
 .PHONY: delete-pod
 delete-pod:
 	@echo "\n♻️ Deleting test pod..."
 	kubectl delete -f dev/manifests/pods/lifespan-seven.pod.yaml
+
+.PHONY: delete-request-pod
+delete-request-pod:
+	@echo "\n♻️ Deleting request pod..."
+	kubectl delete -f dev/manifests/pods/requests-two.pod.yaml
+
+.PHONY: delete-request-bad-pod
+delete-request-bad-pod:
+	@echo "\n♻️ Deleting request pod..."
+	kubectl delete -f dev/manifests/pods/requests-four.pod.yaml
 
 .PHONY: bad-pod
 bad-pod:
