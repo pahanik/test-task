@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 # ---
-FROM golang:1.16 AS build
+FROM golang:1.17.8 AS build
 
 ENV GOOS=linux
 ENV GOARCH=amd64

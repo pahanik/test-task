@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    acme.com/requests: "3"
+  name: requests-3
+  namespace: apps
+spec:
+  containers:
+    - args:
+        - sleep
+        - "3600"
+      image: busybox
+      name: request-two
+      resources:
+          requests:
+              cpu: "3"
+  restartPolicy: Always
+  
