@@ -16,7 +16,13 @@ func main() {
 	setLogger()
 
 	// handle our core application
-	http.HandleFunc("/validate-pods", ServeValidatePods)
+	http.HandleFunc("/validate-pods", ServeValidate)
+	http.HandleFunc("/validate-replicasets", ServeValidate)
+	http.HandleFunc("/validate-deployments", ServeValidate)
+	http.HandleFunc("/validate-daemonsets", ServeValidate)
+	http.HandleFunc("/validate-jobs", ServeValidate)
+	http.HandleFunc("/validate-cronjobs", ServeValidate)
+	http.HandleFunc("/validate-statefulsets", ServeValidate)
 	http.HandleFunc("/mutate-pods", ServeMutatePods)
 	http.HandleFunc("/health", ServeHealth)
 
@@ -41,7 +47,7 @@ func ServeHealth(w http.ResponseWriter, r *http.Request) {
 
 // ServeValidatePods validates an admission request and then writes an admission
 // review to `w`
-func ServeValidatePods(w http.ResponseWriter, r *http.Request) {
+func ServeValidate(w http.ResponseWriter, r *http.Request) {
 	logger := logrus.WithField("uri", r.RequestURI)
 	logger.Debug("received validation request")
 
@@ -57,7 +63,7 @@ func ServeValidatePods(w http.ResponseWriter, r *http.Request) {
 		Request: in.Request,
 	}
 
-	out, err := adm.ValidatePodReview()
+	out, err := adm.ValidateReview()
 	if err != nil {
 		e := fmt.Sprintf("could not generate admission response: %v", err)
 		logger.Error(e)

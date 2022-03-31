@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // Admitter is a container for admission business
@@ -44,15 +45,29 @@ func (a Admitter) MutatePodReview() (*admissionv1.AdmissionReview, error) {
 
 // MutatePodReview takes an admission request and validates the pod within
 // it returns an admission review
-func (a Admitter) ValidatePodReview() (*admissionv1.AdmissionReview, error) {
-	pod, err := a.Pod()
+func (a Admitter) ValidateReview() (*admissionv1.AdmissionReview, error) {
+	var err error
+        var spec corev1.PodSpec
+	var namespace string
+	switch a.Request.Kind.Kind{
+		case "Pod":
+			var pod *corev1.Pod
+			pod, err = a.Pod()
+			spec = pod.Spec
+			namespace = pod.ObjectMeta.Namespace
+		case "ReplicaSet":
+			var rs *appsv1.ReplicaSet
+			rs, err = a.ReplicaSet()
+			spec = rs.Spec.Template.Spec
+			namespace = rs.ObjectMeta.Namespace
+	}
 	if err != nil {
 		e := fmt.Sprintf("could not parse pod in admission review request: %v", err)
 		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
 	}
 
 	v := validation.NewValidator(a.Logger)
-	val, err := v.ValidatePod(pod)
+	val, err := v.ValidatePodSpec(spec, namespace, a.Request.UserInfo.Username)
 	if err != nil {
 		e := fmt.Sprintf("could not validate pod: %v", err)
 		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
@@ -67,16 +82,21 @@ func (a Admitter) ValidatePodReview() (*admissionv1.AdmissionReview, error) {
 
 // Pod extracts a pod from an admission request
 func (a Admitter) Pod() (*corev1.Pod, error) {
-	if a.Request.Kind.Kind != "Pod" {
-		return nil, fmt.Errorf("only pods are supported here")
-	}
-
 	p := corev1.Pod{}
 	if err := json.Unmarshal(a.Request.Object.Raw, &p); err != nil {
 		return nil, err
 	}
 
 	return &p, nil
+}
+
+func (a Admitter) ReplicaSet() (*appsv1.ReplicaSet, error) {
+        p := appsv1.ReplicaSet{}
+        if err := json.Unmarshal(a.Request.Object.Raw, &p); err != nil {
+                return nil, err
+        }
+
+        return &p, nil
 }
 
 // reviewResponse TODO: godoc

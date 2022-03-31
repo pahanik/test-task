@@ -18,17 +18,31 @@ type cpuRequestValidator struct {
 }
 
 // cpuValidator implements the podValidator interface
-var _ podValidator = (*cpuRequestValidator)(nil)
+var _ podSpecValidator = (*cpuRequestValidator)(nil)
 
 // Name returns the name of cpuValidator
 func (n cpuRequestValidator) Name() string {
 	return "cpu_request_validator"
 }
 
+func (n cpuRequestValidator) ApplyValidationRules(container corev1.Container, user string, cont_type string, namespace string, namespaces map[string]string) (validation, error) {
+        cpuRequest := resource.NewMilliQuantity(2000, resource.DecimalSI)
+        adminCpuRequest := resource.NewMilliQuantity(3000, resource.DecimalSI)
+        r, ok := container.Resources.Requests[corev1.ResourceCPU]
+        if ok {
+                if ! ( user == "kubernetes-admin" && r.MilliValue() > adminCpuRequest.MilliValue() ) {
+                        if r.MilliValue() > cpuRequest.MilliValue() {
+                                return validation{Valid: false, Reason: fmt.Sprintf("%s %s has cpu request %vm > %vm in %s namespace. Validated namespaces: %v", cont_type, container.Name, r.MilliValue(), cpuRequest.MilliValue(), namespace, namespaces)}, nil
+                        }
+                }
+        }
+	return validation{Valid: true, Reason: "valid cpu request"}, nil
+}
+
 // Validate inspects the cpu requests of a given pod and returns validation.
 // The returned validation is only valid if the pod cpu request is less or
 // equal predefined value. It works only in namespaces defined by ConfigMap
-func (n cpuRequestValidator) Validate(pod *corev1.Pod) (validation, error) {
+func (n cpuRequestValidator) Validate(spec corev1.PodSpec, namespace string, user string) (validation, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
@@ -42,17 +56,16 @@ func (n cpuRequestValidator) Validate(pod *corev1.Pod) (validation, error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	if _, ok := configmap.Data[pod.ObjectMeta.Namespace]; ok {
-		cpuRequest := resource.NewMilliQuantity(2000, resource.DecimalSI)
-		for _, container := range pod.Spec.Containers {
-			if r, ok := container.Resources.Requests[corev1.ResourceCPU]; ok && r.MilliValue() > cpuRequest.MilliValue() {
-				return validation{Valid: false, Reason: fmt.Sprintf("Container %s has cpu request %vm > %vm in %s namespace. Validated namespaces: %v", container.Name, r.MilliValue(), cpuRequest.MilliValue(), pod.ObjectMeta.Namespace, configmap.Data)}, nil
+	if _, ok := configmap.Data[namespace]; ok {
+		for _, container := range spec.Containers {
+			if v, e := n.ApplyValidationRules(container, user, "Container", namespace, configmap.Data); nil == e && !v.Valid {
+				return v, nil
 			}
 		}
-		for _, container := range pod.Spec.InitContainers {
-			if r, ok := container.Resources.Requests[corev1.ResourceCPU]; ok && r.MilliValue() > cpuRequest.MilliValue() {
-                        	return validation{Valid: false, Reason: fmt.Sprintf("Init container %s has cpu request %vm > %vm in %s namespace. Validated namespaces: %v", container.Name, r.MilliValue(), cpuRequest.MilliValue(), pod.ObjectMeta.Namespace, configmap.Data)}, nil
-                	}
+		for _, container := range spec.InitContainers {
+			if v, e := n.ApplyValidationRules(container, user, "Init container", namespace, configmap.Data); nil == e && !v.Valid {
+				return v, nil
+			}
 		}
 	}
 	return validation{Valid: true, Reason: "valid cpu request"}, nil

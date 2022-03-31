@@ -16,8 +16,8 @@ func NewValidator(logger *logrus.Entry) *Validator {
 }
 
 // podValidators is an interface used to group functions mutating pods
-type podValidator interface {
-	Validate(*corev1.Pod) (validation, error)
+type podSpecValidator interface {
+	Validate(corev1.PodSpec, string, string) (validation, error)
 	Name() string
 }
 
@@ -27,28 +27,16 @@ type validation struct {
 }
 
 // ValidatePod returns true if a pod is valid
-func (v *Validator) ValidatePod(pod *corev1.Pod) (validation, error) {
-	var podName string
-	if pod.Name != "" {
-		podName = pod.Name
-	} else {
-		if pod.ObjectMeta.GenerateName != "" {
-			podName = pod.ObjectMeta.GenerateName
-		}
-	}
-	log := logrus.WithField("pod_name", podName)
-	log.Print("delete me")
-
+func (v *Validator) ValidatePodSpec(spec corev1.PodSpec, namespace string, user string) (validation, error) {
 	// list of all validations to be applied to the pod
-	validations := []podValidator{
-		nameValidator{v.Logger},
+	validations := []podSpecValidator{
 		cpuRequestValidator{v.Logger},
 	}
 
 	// apply all validations
 	for _, v := range validations {
 		var err error
-		vp, err := v.Validate(pod)
+		vp, err := v.Validate(spec, namespace, user)
 		if err != nil {
 			return validation{Valid: false, Reason: err.Error()}, err
 		}
@@ -57,5 +45,5 @@ func (v *Validator) ValidatePod(pod *corev1.Pod) (validation, error) {
 		}
 	}
 
-	return validation{Valid: true, Reason: "valid pod"}, nil
+	return validation{Valid: true, Reason: "valid podSpec"}, nil
 }
