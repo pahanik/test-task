@@ -130,7 +130,7 @@ Error from server: error when creating "dev/manifests/pods/bad-name.pod.yaml": a
 ```
 You should see in the admission webhook logs that the pod validation failed. It's possible you will also see that the pod was mutated, as webhook configurations are not ordered.
 ```
-make request
+❯ make request
 
 🚀 Deploying request testing resources...
 kubectl apply -f dev/manifests/request/
