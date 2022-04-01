@@ -129,7 +129,37 @@ kubectl apply -f dev/manifests/pods/bad-name.pod.yaml
 Error from server: error when creating "dev/manifests/pods/bad-name.pod.yaml": admission webhook "simple-kubernetes-webhook.acme.com" denied the request: pod name contains "offensive"
 ```
 You should see in the admission webhook logs that the pod validation failed. It's possible you will also see that the pod was mutated, as webhook configurations are not ordered.
+```
+make request
 
+🚀 Deploying request testing resources...
+kubectl apply -f dev/manifests/request/
+cronjob.batch/hello configured
+daemonset.apps/requests-4 unchanged
+deployment.apps/requests-4 unchanged
+job.batch/requests-4 unchanged
+pod/requests-4 unchanged
+replicaset.apps/requests-4 unchanged
+statefulset.apps/requests-4 unchanged
+cronjob.batch/hello configured
+cronjob.batch/hello configured
+daemonset.apps/requests-2 unchanged
+deployment.apps/requests-2 unchanged
+job.batch/requests-2 unchanged
+pod/requests-2 unchanged
+replicaset.apps/requests-2 unchanged
+statefulset.apps/requests-2 unchanged
+Error from server: error when creating "dev/manifests/request/requests-three.daemonset.yaml": admission webhook "daemonset-webhook.acme.com" denied the request: Container request-3 has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Error from server: error when creating "dev/manifests/request/requests-three.deployment.yaml": admission webhook "deployment-webhook.acme.com" denied the request: Container request-three has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Error from server: error when creating "dev/manifests/request/requests-three.job.yaml": admission webhook "job-webhook.acme.com" denied the request: Container request-3 has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Error from server: error when creating "dev/manifests/request/requests-three.pod.yaml": admission webhook "simple-kubernetes-webhook.acme.com" denied the request: Container request-two has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Error from server: error when creating "dev/manifests/request/requests-three.replicaset.yaml": admission webhook "replicaset-webhook.acme.com" denied the request: Container request-two has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Error from server: error when creating "dev/manifests/request/requests-three.statefulset.yaml": admission webhook "statefulset-webhook.acme.com" denied the request: Container request-3 has cpu request 3000m > 2000m in apps namespace. Validated namespaces: map[apps: default:]
+Makefile:88: recipe for target 'request' failed
+make: *** [request] Error 1
+```
+You should see that the validation passes for pod with 2 cpu requests in container resources specification. It fails when cpu requests > 2 and shows pods namespace and which namespaces are specified in 'validator-config' ConfigMap. Also, validation passes in case kubernetes-admin creates resources with cpu request > 3
+```
 ## Testing
 Unit tests can be run with the following command:
 ```
