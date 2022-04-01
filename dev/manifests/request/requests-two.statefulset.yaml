@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    acme.com/requests: "2"
+  name: requests-2
+  namespace: apps
+spec:
+  serviceName: test
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        name: request-two
+        resources:
+          requests:
+              cpu: "2"
+      restartPolicy: Always
+  

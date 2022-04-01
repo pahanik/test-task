@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    acme.com/requests: "3"
+  name: requests-3
+  namespace: apps
+spec:
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        name: request-three
+        resources:
+          requests:
+              cpu: "3"
+      restartPolicy: Always
+  
