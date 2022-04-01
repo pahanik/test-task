@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    acme.com/requests: "2"
+  name: requests-2
+  namespace: apps
+spec:
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        name: request-two
+        resources:
+          requests:
+              cpu: "2"
+      restartPolicy: Never
+  

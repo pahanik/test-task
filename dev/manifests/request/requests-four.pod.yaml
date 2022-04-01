@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    acme.com/requests: "4"
+  name: requests-4
+  namespace: apps
+spec:
+  containers:
+    - args:
+        - sleep
+        - "3600"
+      image: busybox
+      name: request-four
+      resources:
+          requests:
+              cpu: "4"
+  restartPolicy: Always
+  
